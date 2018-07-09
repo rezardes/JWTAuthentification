@@ -1,14 +1,103 @@
 package main
 
 import (
-	"github.com/labstack/echo"
 	"net/http"
+	"github.com/labstack/echo"
 )
+
+func isValidLogin(username string, password string) bool {
+	return true
+}
+
+type MockJWT struct {
+	Response string
+	Token string
+}
+
+func validateLogin(c echo.Context) error {
+
+	name := c.FormValue("name")
+	password := c.FormValue("password")
+
+	if (isValidLogin(name, password)) {
+		res := &MockJWT{
+			Response:  "Success!",
+			Token: "1234",
+		}
+		return c.JSON(http.StatusOK, res)
+	} else {
+		res := &MockJWT{
+			Response:  "Failed!",
+		}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+}
 
 func main() {
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
+	e.POST("/authenticate", validateLogin)
 	e.Logger.Fatal(e.Start(":1323"))
 }
+
+/* func login(c echo.Context) error {
+	username := c.FormValue("username")
+	password := c.FormValue("password")
+
+	if username == "jon" && password == "shhh!" {
+		// Create token
+		token := jwt.New(jwt.SigningMethodHS256)
+
+		// Set claims
+		claims := token.Claims.(jwt.MapClaims)
+		claims["name"] = "Jon Snow"
+		claims["admin"] = true
+		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+		// Generate encoded token and send it as response.
+		t, err := token.SignedString([]byte("secret"))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, map[string]string{
+			"token": t,
+		})
+	}
+
+	return echo.ErrUnauthorized
+}
+
+func accessible(c echo.Context) error {
+	return c.String(http.StatusOK, "Accessible")
+}
+
+func restricted(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	name := claims["name"].(string)
+	return c.String(http.StatusOK, "Welcome "+name+"!")
+}
+
+func main() {
+	e := echo.New()
+
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Login route
+	e.POST("/login", login)
+
+	// Unauthenticated route
+	e.GET("/", accessible)
+
+	// Restricted group
+	r := e.Group("/restricted")
+	r.Use(middleware.JWT([]byte("secret")))
+	r.GET("", restricted)
+
+	e.Logger.Fatal(e.Start(":1323"))
+} */
